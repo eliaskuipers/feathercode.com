@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feather Code - Editor</title>
+    <style>
+        :root {
+            /* Thema Kleuren */
+            --bg-base: #181825; /* Diep donkerblauw/grijs */
+            --bg-panel: #1e1e2e;
+            --bg-hover: #313244;
+            --accent-pink: #ff7eb3;
+            --accent-blue: #7cd0ff;
+            --text-main: #cdd6f4;
+            --text-muted: #a6adc8;
+            --border: #313244;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Bar */
+        header {
+            height: 40px;
+            background-color: var(--bg-base);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            justify-content: space-between;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            color: var(--accent-pink);
+            letter-spacing: 1px;
+        }
+
+        /* App Layout */
+        .app-container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 40px);
+        }
+
+        /* Sidebar - Project Explorer */
+        .sidebar {
+            width: 250px;
+            background-color: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 10px 15px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            color: var(--accent-blue);
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+        .btn-icon:hover { color: var(--accent-pink); transform: scale(1.1); }
+
+        .file-list {
+            list-style: none;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            padding: 6px 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .file-item:hover, .file-item.active {
+            background-color: var(--bg-hover);
+            color: var(--accent-blue);
+        }
+
+        /* File Icons */
+        .icon-html { color: #e34c26; }
+        .icon-css { color: #264de4; }
+        .icon-js { color: #f7df1e; }
+
+        /* Main Editor */
+        .main-editor {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-base);
+        }
+
+        .tabs {
+            display: flex;
+            background-color: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background-color: var(--bg-base);
+            border-top: 2px solid var(--accent-pink);
+            border-right: 1px solid var(--border);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .code-area {
+            flex: 1;
+            width: 100%;
+            background-color: transparent;
+            color: var(--text-main);
+            border: none;
+            padding: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 15px;
+            resize: none;
+            outline: none;
+            line-height: 1.5;
+        }
+
+        /* AI Panel */
+        .ai-panel {
+            width: 300px;
+            background-color: var(--bg-panel);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ai-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            color: var(--accent-pink);
+        }
+
+        .ai-chat {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .chat-msg {
+            background-color: var(--bg-hover);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .chat-msg.ai { border-left: 3px solid var(--accent-pink); }
+        .chat-msg.user { border-left: 3px solid var(--accent-blue); align-self: flex-end; background-color: #232534; }
+
+        .ai-input-container {
+            padding: 15px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+        }
+
+        .ai-input {
+            flex: 1;
+            background-color: var(--bg-base);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 4px;
+            outline: none;
+        }
+        .ai-input:focus { border-color: var(--accent-blue); }
+
+        .btn-send {
+            background-color: var(--accent-pink);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .btn-send:hover { background-color: var(--accent-blue); }
+
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navigatie -->
+    <header>
+        <div class="logo-container">
+            <!-- Modern Pink Feather Logo (SVG) -->
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" stroke="var(--accent-pink)"></path>
+                <line x1="16" y1="8" x2="2" y2="22" stroke="var(--accent-blue)"></line>
+                <line x1="17.5" y1="15" x2="9" y2="15" stroke="var(--accent-pink)"></line>
+            </svg>
+            Feather Code
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted);">v0.1 Prototype</div>
+    </header>
+
+    <div class="app-container">
+        <!-- Sidebar: Project Explorer -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                Project Explorer
+                <div>
+                    <button class="btn-icon" onclick="createFile()" title="Nieuw Bestand">➕</button>
+                    <button class="btn-icon" onclick="renameFile()" title="Hernoem Bestand">✏️</button>
+                </div>
+            </div>
+            <ul class="file-list" id="file-list">
+                <li class="file-item active" onclick="openFile('index.html', this)">
+                    <span class="icon-html">📄</span> index.html
+                </li>
+                <li class="file-item" onclick="openFile('style.css', this)">
+                    <span class="icon-css">🎨</span> style.css
+                </li>
+                <li class="file-item" onclick="openFile('app.js', this)">
+                    <span class="icon-js">⚡</span> app.js
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Editor Paneel -->
+        <main class="main-editor">
+            <div class="tabs" id="tabs">
+                <div class="tab">
+                    <span class="icon-html">📄</span> <span id="current-tab-name">index.html</span>
+                </div>
+            </div>
+            <!-- Tekstgebied waar je daadwerkelijk in kunt typen -->
+            <textarea class="code-area" id="code-editor" spellcheck="false">
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mijn App</title>
+</head>
+<body>
+    <h1>Welkom bij Feather Code!</h1>
+    <p>Typ hier je code...</p>
+</body>
+</html></textarea>
+        </main>
+
+        <!-- AI Assistent Paneel -->
+        <aside class="ai-panel">
+            <div class="ai-header">
+                ✨ Feather AI Agent
+            </div>
+            <div class="ai-chat" id="ai-chat">
+                <div class="chat-msg ai">
+                    Hallo! Ik ben Feather AI. Hoe kan ik je vandaag helpen met je code? Ik kan functies voor je schrijven of fouten oplossen.
+                </div>
+            </div>
+            <div class="ai-input-container">
+                <input type="text" id="ai-input" class="ai-input" placeholder="Vraag AI om code..." onkeypress="handleEnter(event)">
+                <button class="btn-send" onclick="sendAiMessage()">➜</button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- JavaScript voor interactie (Knoppen, bestanden, popups) -->
+    <script>
+        // Bestanden openen
+        function openFile(fileName, element) {
+            // Verwijder active class van alle bestanden
+            document.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
+            // Maak de geklikte actief
+            element.classList.add('active');
+            
+            // Verander de tab naam
+            document.getElementById('current-tab-name').innerText = fileName;
+
+            // Verander de inhoud in de editor (simulatie)
+            const editor = document.getElementById('code-editor');
+            if(fileName.endsWith('.css')) {
+                editor.value = "body {\n  background: #181825;\n  color: #fff;\n}\n";
+            } else if(fileName.endsWith('.js')) {
+                editor.value = "function startApp() {\n  console.log('Feather Code gelanceerd!');\n}\n\nstartApp();";
+            } else {
+                editor.value = "<h1>Welkom bij " + fileName + "</h1>\n<p>Start met typen...</p>";
+            }
+        }
+
+        // Bestand aanmaken popup
+        function createFile() {
+            const fileName = prompt("Voer de naam in van het nieuwe bestand (bijv. game.js):", "nieuw_bestand.js");
+            if (fileName) {
+                const ul = document.getElementById('file-list');
+                const li = document.createElement('li');
+                li.className = 'file-item';
+                li.innerHTML = `<span>📄</span> ${fileName}`;
+                li.onclick = function() { openFile(fileName, this); };
+                ul.appendChild(li);
+                // Open the new file immediately
+                openFile(fileName, li);
+            }
+        }
+
+        // Bestand hernoemen popup
+        function renameFile() {
+            const activeFile = document.querySelector('.file-item.active');
+            if(!activeFile) return alert("Selecteer eerst een bestand om te hernoemen.");
+            
+            const currentName = activeFile.innerText.replace('📄', '').replace('🎨', '').replace('⚡', '').trim();
+            const newName = prompt("Hernoem bestand:", currentName);
+            
+            if(newName) {
+                // Behoud het icoon in deze simpele opzet
+                activeFile.innerHTML = `<span>📄</span> ${newName}`;
+                document.getElementById('current-tab-name').innerText = newName;
+            }
+        }
+
+        // AI Chat logica
+        function sendAiMessage() {
+            const input = document.getElementById('ai-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const chat = document.getElementById('ai-chat');
+            
+            // Voeg bericht van gebruiker toe
+            chat.innerHTML += `<div class="chat-msg user">${message}</div>`;
+            input.value = '';
+            chat.scrollTop = chat.scrollHeight;
+
+            // Simuleer een AI antwoord (Hier koppel je later de API key)
+            setTimeout(() => {
+                chat.innerHTML += `<div class="chat-msg ai">Begrepen! Hier koppel je straks de OpenAI of Anthropic API key aan via de backend om écht code te genereren voor: <i>"${message}"</i>.</div>`;
+                chat.scrollTop = chat.scrollHeight;
+            }, 1000);
+        }
+
+        // Enter knop in chat
+        function handleEnter(e) {
+            if (e.key === 'Enter') {
+                sendAiMessage();
+            }
+        }
+    </script>
+</body>
+</html>
